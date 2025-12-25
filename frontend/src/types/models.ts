@@ -6,6 +6,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   tradingStrategy: TradingStrategy;
+  notificationPreferences: NotificationPreferences;
   portfolios: Portfolio[];
 }
 
@@ -222,4 +223,10 @@ export enum RiskTolerance {
   Low = 'Low',
   Medium = 'Medium',
   High = 'High'
+}
+
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+  priceAlerts: boolean;
+  dailySummary: boolean;
 }

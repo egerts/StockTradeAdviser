@@ -21,9 +21,9 @@ export const Dashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         const [portfoliosRes, recommendationsRes, marketRes] = await Promise.all([
-          fetch('/api/portfolios'),
-          fetch('/api/recommendations/active'),
-          fetch('/api/stocks/market-overview')
+          fetch('http://localhost:53133/api/portfolios'),
+          fetch('http://localhost:53133/api/recommendations/active'),
+          fetch('http://localhost:53133/api/stocks/market-overview')
         ]);
 
         const portfoliosData = await portfoliosRes.json();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, TradingStrategy, RiskTolerance, InvestmentHorizon } from '../types/models';
+import { User, TradingStrategy, RiskTolerance, InvestmentHorizon, NotificationPreferences } from '../types/models';
 import { 
   CogIcon,
   UserIcon,
@@ -32,6 +32,12 @@ export const Settings: React.FC = () => {
     },
   });
 
+  const [notificationData, setNotificationData] = useState<NotificationPreferences>({
+    emailNotifications: true,
+    priceAlerts: true,
+    dailySummary: false,
+  });
+
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -39,6 +45,11 @@ export const Settings: React.FC = () => {
         email: user.email,
       });
       setStrategyData(user.tradingStrategy);
+      setNotificationData(user.notificationPreferences || {
+        emailNotifications: true,
+        priceAlerts: true,
+        dailySummary: false,
+      });
     }
   }, [user]);
 
@@ -52,7 +63,7 @@ export const Settings: React.FC = () => {
         ...profileData,
       };
 
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch('http://localhost:53133/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +96,7 @@ export const Settings: React.FC = () => {
         tradingStrategy: strategyData,
       };
 
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch('http://localhost:53133/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -102,6 +113,39 @@ export const Settings: React.FC = () => {
     } catch (error) {
       console.error('Error saving strategy:', error);
       setSaveMessage('Error saving strategy');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      const updatedUser = {
+        ...user,
+        notificationPreferences: notificationData,
+      };
+
+      const response = await fetch('http://localhost:53133/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedUser),
+      });
+
+      if (response.ok) {
+        const savedUser = await response.json();
+        updateUser(savedUser);
+        setSaveMessage('Notification preferences updated successfully!');
+        setTimeout(() => setSaveMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving notifications:', error);
+      setSaveMessage('Error saving notification preferences');
       setTimeout(() => setSaveMessage(''), 3000);
     } finally {
       setIsSaving(false);
@@ -407,7 +451,8 @@ export const Settings: React.FC = () => {
               <input
                 type="checkbox"
                 className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                defaultChecked={true}
+                checked={notificationData.emailNotifications}
+                onChange={(e) => setNotificationData(prev => ({ ...prev, emailNotifications: e.target.checked }))}
               />
             </label>
             
@@ -419,7 +464,8 @@ export const Settings: React.FC = () => {
               <input
                 type="checkbox"
                 className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                defaultChecked={true}
+                checked={notificationData.priceAlerts}
+                onChange={(e) => setNotificationData(prev => ({ ...prev, priceAlerts: e.target.checked }))}
               />
             </label>
             
@@ -431,14 +477,19 @@ export const Settings: React.FC = () => {
               <input
                 type="checkbox"
                 className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                defaultChecked={false}
+                checked={notificationData.dailySummary}
+                onChange={(e) => setNotificationData(prev => ({ ...prev, dailySummary: e.target.checked }))}
               />
             </label>
           </div>
           
           <div className="mt-6 flex justify-end">
-            <button className="btn btn-primary">
-              Save Preferences
+            <button 
+              onClick={handleSaveNotifications}
+              disabled={isSaving}
+              className="btn btn-primary"
+            >
+              {isSaving ? 'Saving...' : 'Save Preferences'}
             </button>
           </div>
         </div>

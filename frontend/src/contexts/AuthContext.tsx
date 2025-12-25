@@ -43,7 +43,7 @@ interface AuthProviderProps {
           }
 
           // Call backend API to get user profile
-          const userProfile = await fetch('/api/auth/profile');
+          const userProfile = await fetch('http://localhost:53133/api/auth/profile');
 
           if (userProfile.ok) {
             const userData = await userProfile.json();
@@ -70,6 +70,11 @@ interface AuthProviderProps {
                   trailingStopEnabled: false,
                   trailingStopPercentage: 5
                 }
+              },
+              notificationPreferences: {
+                emailNotifications: true,
+                priceAlerts: true,
+                dailySummary: false
               }
             };
             setUser(userData);

@@ -30,6 +30,12 @@ public class MockUserService : IUserService
                     TrailingStopEnabled = false,
                     TrailingStopPercentage = 5
                 }
+            },
+            NotificationPreferences = new NotificationPreferences
+            {
+                EmailNotifications = true,
+                PriceAlerts = true,
+                DailySummary = false
             }
         };
     }
@@ -74,6 +80,12 @@ public class MockUserService : IUserService
                     TrailingStopEnabled = false,
                     TrailingStopPercentage = 5
                 }
+            },
+            NotificationPreferences = new NotificationPreferences
+            {
+                EmailNotifications = true,
+                PriceAlerts = true,
+                DailySummary = false
             }
         };
 

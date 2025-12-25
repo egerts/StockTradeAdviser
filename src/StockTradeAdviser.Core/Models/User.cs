@@ -23,7 +23,10 @@ public class User
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     
     [JsonPropertyName("tradingStrategy")]
-    public TradingStrategy TradingStrategy { get; set; } = new();
+    public TradingStrategy TradingStrategy { get; set; } = new TradingStrategy();
+    
+    [JsonPropertyName("notificationPreferences")]
+    public NotificationPreferences NotificationPreferences { get; set; } = new NotificationPreferences();
     
     [JsonPropertyName("portfolios")]
     public List<Portfolio> Portfolios { get; set; } = new();
@@ -62,6 +65,7 @@ public class SellStrategy
     public decimal TrailingStopPercentage { get; set; } = 5m;
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum RiskTolerance
 {
     Low,
@@ -69,9 +73,22 @@ public enum RiskTolerance
     High
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum InvestmentHorizon
 {
     ShortTerm,
     MediumTerm,
     LongTerm
+}
+
+public class NotificationPreferences
+{
+    [JsonPropertyName("emailNotifications")]
+    public bool EmailNotifications { get; set; } = true;
+    
+    [JsonPropertyName("priceAlerts")]
+    public bool PriceAlerts { get; set; } = true;
+    
+    [JsonPropertyName("dailySummary")]
+    public bool DailySummary { get; set; } = false;
 }
