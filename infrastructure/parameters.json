@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sqlAdministratorLogin": {
+      "value": "stockadmin"
+    },
+    "sqlAdministratorPassword": {
+      "value": "YourSecurePassword123!"
+    },
+    "functionAppName": {
+      "value": "StockTradeAdviser-Functions"
+    },
+    "webAppName": {
+      "value": "StockTradeAdviser-API"
+    },
+    "storageAccountName": {
+      "value": "stocktradeadviserstorage"
+    },
+    "cosmosDbAccountName": {
+      "value": "stocktradeadviser-cosmos"
+    },
+    "serviceBusNamespaceName": {
+      "value": "stocktradeadviser-servicebus"
+    },
+    "appInsightsName": {
+      "value": "stocktradeadviser-insights"
+    }
+  }
+}

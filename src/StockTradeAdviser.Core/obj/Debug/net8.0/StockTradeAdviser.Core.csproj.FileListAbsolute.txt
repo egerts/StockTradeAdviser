@@ -1,0 +1,17 @@
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\Microsoft.Azure.Cosmos.ServiceInterop.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\Cosmos.CRTCompat.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\msvcp140.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\vcruntime140.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\vcruntime140_1.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\StockTradeAdviser.Core.deps.json
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\StockTradeAdviser.Core.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\bin\Debug\net8.0\StockTradeAdviser.Core.pdb
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.csproj.AssemblyReference.cache
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.AssemblyInfoInputs.cache
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.AssemblyInfo.cs
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.csproj.CoreCompileInputs.cache
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\refint\StockTradeAdviser.Core.dll
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\StockTradeAdviser.Core.pdb
+C:\Users\egert\repos\StockTradeAdviser\src\StockTradeAdviser.Core\obj\Debug\net8.0\ref\StockTradeAdviser.Core.dll
