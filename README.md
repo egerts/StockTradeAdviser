@@ -1,6 +1,8 @@
 # StockTradeAdviser
 
-An AI-powered stock trading advisory system that provides personalized buy/sell recommendations based on user-defined trading strategies.
+**An experimental project to learn and showcase development with AI agents (Windsurf and Copilot).**
+
+This is an AI-powered stock trading advisory system that provides personalized buy/sell recommendations based on user-defined trading strategies. The project serves as a practical exploration of how AI coding assistants can collaborate to build a complex, cloud-native application.
 
 ## Architecture Overview
 
