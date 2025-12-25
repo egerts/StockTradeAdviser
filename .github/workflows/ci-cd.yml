@@ -1,0 +1,175 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_FUNCTIONAPP_NAME: StockTradeAdviser-Functions
+  AZURE_WEBAPP_NAME: StockTradeAdviser-API
+  NODE_VERSION: '18.x'
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Restore .NET dependencies
+      run: dotnet restore
+      
+    - name: Build .NET solution
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Run .NET tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+      
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm ci
+      
+    - name: Run frontend tests
+      working-directory: frontend
+      run: npm test -- --coverage --watchAll=false
+      
+    - name: Build frontend
+      working-directory: frontend
+      run: npm run build
+      
+    - name: Publish .NET Functions
+      run: dotnet publish src/StockTradeAdviser.Functions/StockTradeAdviser.Functions.csproj --configuration Release --output ./functions-publish
+      
+    - name: Publish .NET API
+      run: dotnet publish src/StockTradeAdviser.Api/StockTradeAdviser.Api.csproj --configuration Release --output ./api-publish
+      
+    - name: Upload Functions artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: functions-artifact
+        path: ./functions-publish
+        
+    - name: Upload API artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-artifact
+        path: ./api-publish
+        
+    - name: Upload Frontend artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-artifact
+        path: frontend/build
+
+  deploy-functions:
+    needs: build-and-test
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Download Functions artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: functions-artifact
+        path: ./functions-publish
+        
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Deploy to Azure Functions
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        package: ./functions-publish
+        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+  deploy-api:
+    needs: build-and-test
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Download API artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: api-artifact
+        path: ./api-publish
+        
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: ./api-publish
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
+  deploy-frontend:
+    needs: build-and-test
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Download Frontend artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-artifact
+        path: ./frontend-build
+        
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Deploy to Azure Storage
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az storage blob upload-batch --account-name ${{ secrets.STORAGE_ACCOUNT_NAME }} --auth-mode key --account-key ${{ secrets.STORAGE_ACCOUNT_KEY }} -s ./frontend-build -d '$web' --overwrite
+
+  infrastructure-deploy:
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Deploy Azure Resources
+      uses: azure/cli@v1
+      with:
+        inlineScript: |
+          az deployment group create \
+            --resource-group StockTradeAdviser-RG \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters.json
