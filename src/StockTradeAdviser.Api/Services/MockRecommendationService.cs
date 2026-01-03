@@ -89,7 +89,7 @@ public class MockRecommendationService : IRecommendationService
         return new User
         {
             Id = "mock-user-id",
-            AzureAdObjectId = azureAdObjectId,
+            EntraObjectId = azureAdObjectId,
             Email = "test@example.com",
             DisplayName = "Test User",
             TradingStrategy = new TradingStrategy

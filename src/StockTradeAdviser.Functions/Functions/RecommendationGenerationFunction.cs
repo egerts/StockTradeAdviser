@@ -1,5 +1,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using StockTradeAdviser.Data.Services;
 using StockTradeAdviser.Functions.Services;
 
 namespace StockTradeAdviser.Functions.Functions;

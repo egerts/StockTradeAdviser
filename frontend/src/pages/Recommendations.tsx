@@ -29,8 +29,8 @@ export const Recommendations: React.FC = () => {
   const fetchRecommendations = async () => {
     try {
       const [allRes, activeRes] = await Promise.all([
-        fetch('http://localhost:53133/api/recommendations'),
-        fetch('http://localhost:53133/api/recommendations/active')
+        fetch(`${process.env.REACT_APP_API_BASE_URL}/api/recommendations`),
+        fetch(`${process.env.REACT_APP_API_BASE_URL}/api/recommendations/active`)
       ]);
       
       const allData = await allRes.json();
@@ -47,7 +47,7 @@ export const Recommendations: React.FC = () => {
 
   const handleGenerateRecommendations = async () => {
     try {
-      const response = await fetch('http://localhost:53133/api/recommendations/generate', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/recommendations/generate`, {
         method: 'POST'
       });
       
@@ -63,7 +63,7 @@ export const Recommendations: React.FC = () => {
 
   const handleExecuteRecommendation = async (recommendationId: string, action: RecommendationAction) => {
     try {
-      const response = await fetch(`http://localhost:53133/api/recommendations/${recommendationId}/execute`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/recommendations/${recommendationId}/execute`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

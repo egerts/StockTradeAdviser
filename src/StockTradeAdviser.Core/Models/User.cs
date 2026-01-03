@@ -13,8 +13,8 @@ public class User
     [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = string.Empty;
     
-    [JsonPropertyName("azureAdObjectId")]
-    public string AzureAdObjectId { get; set; } = string.Empty;
+    [JsonPropertyName("entraObjectId")]
+    public string EntraObjectId { get; set; } = string.Empty;
     
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

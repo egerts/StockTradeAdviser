@@ -30,7 +30,7 @@ export const Portfolios: React.FC = () => {
 
   const fetchPortfolios = async () => {
     try {
-      const response = await fetch('http://localhost:53133/api/portfolios');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios`);
       const data: Portfolio[] = await response.json();
       setPortfolios(data);
     } catch (error) {
@@ -42,7 +42,7 @@ export const Portfolios: React.FC = () => {
 
   const handleCreatePortfolio = async (portfolioData: Partial<Portfolio>) => {
     try {
-      const response = await fetch('http://localhost:53133/api/portfolios', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export const Portfolios: React.FC = () => {
 
   const handleUpdatePortfolio = async (portfolioData: Portfolio | Partial<Portfolio>) => {
     try {
-      const response = await fetch(`http://localhost:53133/api/portfolios/${portfolioData.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios/${portfolioData.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ export const Portfolios: React.FC = () => {
     if (!showDeleteConfirm) return;
     
     try {
-      const response = await fetch(`http://localhost:53133/api/portfolios/${showDeleteConfirm}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios/${showDeleteConfirm}`, {
         method: 'DELETE',
       });
       
@@ -426,7 +426,7 @@ const PortfolioDetails: React.FC<PortfolioDetailsProps> = ({
         }
       };
       
-      const response = await fetch(`http://localhost:53133/api/portfolios/${portfolio.id}/holdings`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios/${portfolio.id}/holdings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -459,7 +459,7 @@ const PortfolioDetails: React.FC<PortfolioDetailsProps> = ({
         }
       };
       
-      const response = await fetch(`http://localhost:53133/api/portfolios/${portfolio.id}/holdings/${selectedHolding.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios/${portfolio.id}/holdings/${selectedHolding.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -482,7 +482,7 @@ const PortfolioDetails: React.FC<PortfolioDetailsProps> = ({
     if (!portfolio || !selectedHolding) return;
     
     try {
-      const response = await fetch(`http://localhost:53133/api/portfolios/${portfolio.id}/holdings/${selectedHolding.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios/${portfolio.id}/holdings/${selectedHolding.id}`, {
         method: 'DELETE',
       });
       
@@ -731,7 +731,7 @@ const PortfolioDetails: React.FC<PortfolioDetailsProps> = ({
                 timestamp: transaction.timestamp || new Date().toISOString()
               };
 
-              const response = await fetch(`http://localhost:53133/api/portfolios/${portfolio.id}/holdings/${selectedHolding.id}/transactions`, {
+              const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/portfolios/${portfolio.id}/holdings/${selectedHolding.id}/transactions`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

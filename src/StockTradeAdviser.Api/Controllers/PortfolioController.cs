@@ -1,27 +1,17 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StockTradeAdviser.Api.Services;
 using StockTradeAdviser.Core.Models;
-using Microsoft.Identity.Web;
-using System.Text.Json.Serialization;
 
 namespace StockTradeAdviser.Api.Controllers;
 
 [ApiController]
 [Route("api/portfolios")]
 // [Authorize] - Temporarily disabled for testing
-public class PortfolioController : ControllerBase
+public class PortfolioController(IPortfolioService portfolioService, ITransactionService transactionService, ILogger<PortfolioController> logger) : ControllerBase
 {
-    private readonly IPortfolioService _portfolioService;
-    private readonly ITransactionService _transactionService;
-    private readonly ILogger<PortfolioController> _logger;
-
-    public PortfolioController(IPortfolioService portfolioService, ITransactionService transactionService, ILogger<PortfolioController> logger)
-    {
-        _portfolioService = portfolioService;
-        _transactionService = transactionService;
-        _logger = logger;
-    }
+    private readonly IPortfolioService _portfolioService = portfolioService;
+    private readonly ITransactionService _transactionService = transactionService;
+    private readonly ILogger<PortfolioController> _logger = logger;
 
     [HttpGet]
     public async Task<ActionResult<List<Portfolio>>> GetPortfolios()

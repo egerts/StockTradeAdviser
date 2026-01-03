@@ -11,11 +11,6 @@ public class CosmosDbService : ICosmosDbService
     private readonly IConfiguration _configuration;
     private readonly ILogger<CosmosDbService> _logger;
     private readonly string _databaseName;
-    private readonly Container _usersContainer;
-    private readonly Container _portfoliosContainer;
-    private readonly Container _stocksContainer;
-    private readonly Container _recommendationsContainer;
-    private readonly Container _recommendationHistoryContainer;
 
     public CosmosDbService(
         CosmosClient cosmosClient,
@@ -25,20 +20,20 @@ public class CosmosDbService : ICosmosDbService
         _cosmosClient = cosmosClient;
         _configuration = configuration;
         _logger = logger;
-        _databaseName = _configuration["CosmosDb:DatabaseName"] ?? "StockTradeAdviser";
-        
-        _usersContainer = _cosmosClient.GetContainer(_databaseName, "users");
-        _portfoliosContainer = _cosmosClient.GetContainer(_databaseName, "portfolios");
-        _stocksContainer = _cosmosClient.GetContainer(_databaseName, "stocks");
-        _recommendationsContainer = _cosmosClient.GetContainer(_databaseName, "recommendations");
-        _recommendationHistoryContainer = _cosmosClient.GetContainer(_databaseName, "recommendationHistory");
+        _databaseName = _configuration["CosmosDb:DatabaseName"] ?? throw new ArgumentNullException("CosmosDb:DatabaseName");
     }
+
+    private Container GetUsersContainer() => _cosmosClient.GetContainer(_databaseName, "users");
+    private Container GetPortfoliosContainer() => _cosmosClient.GetContainer(_databaseName, "portfolios");
+    private Container GetStocksContainer() => _cosmosClient.GetContainer(_databaseName, "stocks");
+    private Container GetRecommendationsContainer() => _cosmosClient.GetContainer(_databaseName, "recommendations");
+    private Container GetRecommendationHistoryContainer() => _cosmosClient.GetContainer(_databaseName, "recommendationHistory");
 
     public async Task<StockTradeAdviser.Core.Models.User?> GetUserAsync(string userId)
     {
         try
         {
-            var response = await _usersContainer.ReadItemAsync<StockTradeAdviser.Core.Models.User>(userId, new PartitionKey(userId));
+            var response = await GetUsersContainer().ReadItemAsync<StockTradeAdviser.Core.Models.User>(userId, new PartitionKey(userId));
             return response.Resource;
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -47,58 +42,107 @@ public class CosmosDbService : ICosmosDbService
         }
     }
 
-    public async Task<StockTradeAdviser.Core.Models.User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId)
+    public async Task<StockTradeAdviser.Core.Models.User?> GetUserByEntraObjectIdAsync(string entraObjectId)
     {
         try
         {
-            var query = new QueryDefinition("SELECT * FROM c WHERE c.azureAdObjectId = @azureAdObjectId")
-                .WithParameter("@azureAdObjectId", azureAdObjectId);
+            _logger.LogInformation("GetUserByEntraObjectIdAsync called for: {EntraObjectId}", entraObjectId);
             
-            var iterator = _usersContainer.GetItemQueryIterator<StockTradeAdviser.Core.Models.User>(query);
+            var query = new QueryDefinition("SELECT * FROM c WHERE c.entraObjectId = @entraObjectId")
+                .WithParameter("@entraObjectId", entraObjectId);
+            
+            _logger.LogInformation("Executing query against users container");
+            var iterator = GetUsersContainer().GetItemQueryIterator<StockTradeAdviser.Core.Models.User>(query);
+            
             while (iterator.HasMoreResults)
             {
                 var response = await iterator.ReadNextAsync();
-                if (response.Any())
+                if (response.Count != 0)
                 {
+                    _logger.LogInformation("Found user with ID: {UserId}", response.First().Id);
                     return response.First();
                 }
             }
+            
+            _logger.LogInformation("No user found for EntraObjectId: {EntraObjectId}", entraObjectId);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user by Azure AD object ID: {AzureAdObjectId}", azureAdObjectId);
+            _logger.LogError(ex, "Error getting user by Entra object ID: {EntraObjectId}. Exception: {ExceptionType}, Message: {Message}", 
+                entraObjectId, ex.GetType().Name, ex.Message);
             throw;
         }
     }
 
     public async Task<StockTradeAdviser.Core.Models.User> CreateUserAsync(StockTradeAdviser.Core.Models.User user)
     {
-        user.Id = Guid.NewGuid().ToString();
-        user.CreatedAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-        
-        var response = await _usersContainer.CreateItemAsync(user, new PartitionKey(user.Id));
-        return response.Resource;
+        try
+        {
+            _logger.LogInformation("CreateUserAsync called for user with EntraObjectId: {EntraObjectId}", user.EntraObjectId);
+            
+            // Create a minimal user object with only required properties
+            var minimalUser = new
+            {
+                id = Guid.NewGuid().ToString(),
+                email = user.Email ?? "test@example.com",
+                displayName = user.DisplayName ?? "Test User",
+                entraObjectId = user.EntraObjectId,
+                createdAt = DateTime.UtcNow,
+                updatedAt = DateTime.UtcNow
+            };
+            
+            _logger.LogInformation("Created minimal user object with ID: {UserId}", minimalUser.id);
+            
+            // Serialize the minimal user to JSON
+            var userJson = System.Text.Json.JsonSerializer.Serialize(minimalUser);
+            _logger.LogInformation("Minimal user JSON being sent to Cosmos DB: {UserJson}", userJson);
+            
+            _logger.LogInformation("Getting users container and creating item");
+            
+            // Use the minimal user object for Cosmos DB
+            var response = await GetUsersContainer().CreateItemAsync(minimalUser, new PartitionKey(minimalUser.id));
+            
+            _logger.LogInformation("Successfully created user in Cosmos DB with ID: {UserId}", response.Resource.id);
+            
+            // Convert back to full User object
+            var fullUser = new StockTradeAdviser.Core.Models.User
+            {
+                Id = minimalUser.id,
+                Email = minimalUser.email,
+                DisplayName = minimalUser.displayName,
+                EntraObjectId = minimalUser.entraObjectId,
+                CreatedAt = minimalUser.createdAt,
+                UpdatedAt = minimalUser.updatedAt
+            };
+            
+            return fullUser;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user in Cosmos DB. Exception: {ExceptionType}, Message: {Message}", 
+                ex.GetType().Name, ex.Message);
+            throw;
+        }
     }
 
     public async Task<StockTradeAdviser.Core.Models.User> UpdateUserAsync(StockTradeAdviser.Core.Models.User user)
     {
         user.UpdatedAt = DateTime.UtcNow;
-        var response = await _usersContainer.UpsertItemAsync(user, new PartitionKey(user.Id));
+        var response = await GetUsersContainer().UpsertItemAsync(user, new PartitionKey(user.Id));
         return response.Resource;
     }
 
     public async Task DeleteUserAsync(string userId)
     {
-        await _usersContainer.DeleteItemAsync<StockTradeAdviser.Core.Models.User>(userId, new PartitionKey(userId));
+        await GetUsersContainer().DeleteItemAsync<StockTradeAdviser.Core.Models.User>(userId, new PartitionKey(userId));
     }
 
     public async Task<Portfolio?> GetPortfolioAsync(string portfolioId, string userId)
     {
         try
         {
-            var response = await _portfoliosContainer.ReadItemAsync<Portfolio>(portfolioId, new PartitionKey(userId));
+            var response = await GetPortfoliosContainer().ReadItemAsync<Portfolio>(portfolioId, new PartitionKey(userId));
             return response.Resource;
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -113,7 +157,7 @@ public class CosmosDbService : ICosmosDbService
             .WithParameter("@userId", userId);
         
         var portfolios = new List<Portfolio>();
-        var iterator = _portfoliosContainer.GetItemQueryIterator<Portfolio>(query);
+        var iterator = GetPortfoliosContainer().GetItemQueryIterator<Portfolio>(query);
         
         while (iterator.HasMoreResults)
         {
@@ -130,27 +174,27 @@ public class CosmosDbService : ICosmosDbService
         portfolio.CreatedAt = DateTime.UtcNow;
         portfolio.UpdatedAt = DateTime.UtcNow;
         
-        var response = await _portfoliosContainer.CreateItemAsync(portfolio, new PartitionKey(portfolio.UserId));
+        var response = await GetPortfoliosContainer().CreateItemAsync(portfolio, new PartitionKey(portfolio.UserId));
         return response.Resource;
     }
 
     public async Task<Portfolio> UpdatePortfolioAsync(Portfolio portfolio)
     {
         portfolio.UpdatedAt = DateTime.UtcNow;
-        var response = await _portfoliosContainer.UpsertItemAsync(portfolio, new PartitionKey(portfolio.UserId));
+        var response = await GetPortfoliosContainer().UpsertItemAsync(portfolio, new PartitionKey(portfolio.UserId));
         return response.Resource;
     }
 
     public async Task DeletePortfolioAsync(string portfolioId, string userId)
     {
-        await _portfoliosContainer.DeleteItemAsync<Portfolio>(portfolioId, new PartitionKey(userId));
+        await GetPortfoliosContainer().DeleteItemAsync<Portfolio>(portfolioId, new PartitionKey(userId));
     }
 
     public async Task<StockData?> GetStockDataAsync(string symbol)
     {
         try
         {
-            var response = await _stocksContainer.ReadItemAsync<StockData>(symbol.ToUpper(), new PartitionKey(symbol.ToUpper()));
+            var response = await GetStocksContainer().ReadItemAsync<StockData>(symbol.ToUpper(), new PartitionKey(symbol.ToUpper()));
             return response.Resource;
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -179,7 +223,7 @@ public class CosmosDbService : ICosmosDbService
         stockData.Id = stockData.Symbol.ToUpper();
         stockData.Timestamp = DateTime.UtcNow;
         
-        var response = await _stocksContainer.UpsertItemAsync(stockData, new PartitionKey(stockData.Id));
+        var response = await GetStocksContainer().UpsertItemAsync(stockData, new PartitionKey(stockData.Id));
         return response.Resource;
     }
 
@@ -187,7 +231,7 @@ public class CosmosDbService : ICosmosDbService
     {
         try
         {
-            var response = await _recommendationsContainer.ReadItemAsync<Recommendation>(recommendationId, new PartitionKey(userId));
+            var response = await GetRecommendationsContainer().ReadItemAsync<Recommendation>(recommendationId, new PartitionKey(userId));
             return response.Resource;
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -203,7 +247,7 @@ public class CosmosDbService : ICosmosDbService
             .WithParameter("@limit", limit);
         
         var recommendations = new List<Recommendation>();
-        var iterator = _recommendationsContainer.GetItemQueryIterator<Recommendation>(query);
+        var iterator = GetRecommendationsContainer().GetItemQueryIterator<Recommendation>(query);
         
         while (iterator.HasMoreResults)
         {
@@ -220,7 +264,7 @@ public class CosmosDbService : ICosmosDbService
             .WithParameter("@userId", userId);
         
         var recommendations = new List<Recommendation>();
-        var iterator = _recommendationsContainer.GetItemQueryIterator<Recommendation>(query);
+        var iterator = GetRecommendationsContainer().GetItemQueryIterator<Recommendation>(query);
         
         while (iterator.HasMoreResults)
         {
@@ -236,13 +280,13 @@ public class CosmosDbService : ICosmosDbService
         recommendation.Id = Guid.NewGuid().ToString();
         recommendation.CreatedAt = DateTime.UtcNow;
         
-        var response = await _recommendationsContainer.CreateItemAsync(recommendation, new PartitionKey(recommendation.UserId));
+        var response = await GetRecommendationsContainer().CreateItemAsync(recommendation, new PartitionKey(recommendation.UserId));
         return response.Resource;
     }
 
     public async Task<Recommendation> UpdateRecommendationAsync(Recommendation recommendation)
     {
-        var response = await _recommendationsContainer.UpsertItemAsync(recommendation, new PartitionKey(recommendation.UserId));
+        var response = await GetRecommendationsContainer().UpsertItemAsync(recommendation, new PartitionKey(recommendation.UserId));
         return response.Resource;
     }
 
@@ -253,7 +297,7 @@ public class CosmosDbService : ICosmosDbService
             .WithParameter("@limit", limit);
         
         var history = new List<RecommendationHistory>();
-        var iterator = _recommendationHistoryContainer.GetItemQueryIterator<RecommendationHistory>(query);
+        var iterator = GetRecommendationHistoryContainer().GetItemQueryIterator<RecommendationHistory>(query);
         
         while (iterator.HasMoreResults)
         {
@@ -269,7 +313,7 @@ public class CosmosDbService : ICosmosDbService
         history.Id = Guid.NewGuid().ToString();
         history.CreatedAt = DateTime.UtcNow;
         
-        var response = await _recommendationHistoryContainer.CreateItemAsync(history, new PartitionKey(history.UserId));
+        var response = await GetRecommendationHistoryContainer().CreateItemAsync(history, new PartitionKey(history.UserId));
         return response.Resource;
     }
 }

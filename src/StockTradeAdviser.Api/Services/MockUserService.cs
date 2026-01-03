@@ -11,7 +11,7 @@ public class MockUserService : IUserService
         return new User
         {
             Id = userId,
-            AzureAdObjectId = userId,
+            EntraObjectId = userId,
             Email = "test@example.com",
             DisplayName = "Test User",
             CreatedAt = DateTime.UtcNow,
@@ -40,12 +40,12 @@ public class MockUserService : IUserService
         };
     }
 
-    public async Task<User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId)
+    public async Task<User?> GetUserByEntraObjectIdAsync(string entraObjectId)
     {
-        return await GetUserAsync(azureAdObjectId);
+        return await GetUserAsync(entraObjectId);
     }
 
-    public async Task<User> GetOrCreateUserAsync(string azureAdObjectId, ClaimsPrincipal? claimsPrincipal)
+    public async Task<User> GetOrCreateUserAsync(string entraObjectId, ClaimsPrincipal? claimsPrincipal)
     {
         // Create mock claims if none provided (for testing without auth)
         if (claimsPrincipal == null)
@@ -61,7 +61,7 @@ public class MockUserService : IUserService
         var user = new User
         {
             Id = Guid.NewGuid().ToString(),
-            AzureAdObjectId = azureAdObjectId,
+            EntraObjectId = entraObjectId,
             Email = claimsPrincipal.FindFirst("email")?.Value ?? claimsPrincipal.FindFirst("upn")?.Value ?? "test@example.com",
             DisplayName = claimsPrincipal.FindFirst("name")?.Value ?? "Test User",
             CreatedAt = DateTime.UtcNow,

@@ -15,19 +15,6 @@ public class PortfolioService : IPortfolioService
         _logger = logger;
     }
 
-    public async Task<User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId)
-    {
-        try
-        {
-            return await _cosmosDbService.GetUserByAzureAdObjectIdAsync(azureAdObjectId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting user by Azure AD object ID: {AzureAdObjectId}", azureAdObjectId);
-            throw;
-        }
-    }
-
     public async Task<Portfolio?> GetPortfolioAsync(string portfolioId, string userId)
     {
         try

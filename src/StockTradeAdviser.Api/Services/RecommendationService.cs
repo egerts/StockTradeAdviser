@@ -15,19 +15,6 @@ public class RecommendationService : IRecommendationService
         _logger = logger;
     }
 
-    public async Task<User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId)
-    {
-        try
-        {
-            return await _cosmosDbService.GetUserByAzureAdObjectIdAsync(azureAdObjectId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting user by Azure AD object ID: {AzureAdObjectId}", azureAdObjectId);
-            throw;
-        }
-    }
-
     public async Task<Recommendation?> GetRecommendationAsync(string recommendationId, string userId)
     {
         try

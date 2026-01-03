@@ -5,7 +5,7 @@ namespace StockTradeAdviser.Data.Services;
 public interface ICosmosDbService
 {
     Task<User?> GetUserAsync(string userId);
-    Task<User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId);
+    Task<User?> GetUserByEntraObjectIdAsync(string entraObjectId);
     Task<User> CreateUserAsync(User user);
     Task<User> UpdateUserAsync(User user);
     Task DeleteUserAsync(string userId);

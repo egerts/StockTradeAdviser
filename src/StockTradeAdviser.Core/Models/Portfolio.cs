@@ -23,7 +23,7 @@ public class Portfolio
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     
     [JsonPropertyName("holdings")]
-    public List<Holding> Holdings { get; set; } = new();
+    public List<Holding> Holdings { get; set; } = [];
     
     [JsonPropertyName("totalValue")]
     public decimal TotalValue => Holdings.Sum(h => h.CurrentValue);
@@ -74,7 +74,7 @@ public class Holding
     public decimal GainLossPercentage => TotalCost > 0 ? (GainLoss / TotalCost) * 100 : 0;
     
     [JsonPropertyName("transactions")]
-    public List<Transaction> Transactions { get; set; } = new();
+    public List<Transaction> Transactions { get; set; } = [];
 }
 
 public enum AssetType

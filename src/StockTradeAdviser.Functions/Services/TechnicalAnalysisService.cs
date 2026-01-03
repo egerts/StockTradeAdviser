@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using StockTradeAdviser.Core.Models;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
 
 namespace StockTradeAdviser.Functions.Services;
 
@@ -19,7 +20,7 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
         _httpClient = new HttpClient();
         _alphaVantageApiKey = configuration["AlphaVantage:ApiKey"] ?? throw new InvalidOperationException("Alpha Vantage API key is missing");
         
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "StockTradeAdviser/1.0");
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "test");
     }
 
     public async Task<TechnicalIndicators> CalculateTechnicalIndicatorsAsync(string symbol)
@@ -38,11 +39,11 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
             var indicators = new TechnicalIndicators
             {
                 Rsi = await CalculateRSIAsync(dailyPrices.TakeLast(14).ToList()),
-                Sma20 = CalculateSMAAsync(dailyPrices.TakeLast(20).ToList(), 20),
-                Sma50 = CalculateSMAAsync(dailyPrices.TakeLast(50).ToList(), 50),
-                Sma200 = CalculateSMAAsync(dailyPrices.TakeLast(200).ToList(), 200),
-                Ema12 = CalculateEMAAsync(dailyPrices.TakeLast(12).ToList(), 12),
-                Ema26 = CalculateEMAAsync(dailyPrices.TakeLast(26).ToList(), 26)
+                Sma20 = await CalculateSMAAsync(dailyPrices.TakeLast(20).ToList(), 20),
+                Sma50 = await CalculateSMAAsync(dailyPrices.TakeLast(50).ToList(), 50),
+                Sma200 = await CalculateSMAAsync(dailyPrices.TakeLast(200).ToList(), 200),
+                Ema12 = await CalculateEMAAsync(dailyPrices.TakeLast(12).ToList(), 12),
+                Ema26 = await CalculateEMAAsync(dailyPrices.TakeLast(26).ToList(), 26)
             };
 
             var macdResult = await CalculateMACDAsync(dailyPrices.TakeLast(26).ToList());
@@ -50,12 +51,12 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
             indicators.MacdSignal = macdResult.signal;
             indicators.MacdHistogram = macdResult.histogram;
 
-            var bollingerResult = CalculateBollingerBandsAsync(dailyPrices.TakeLast(20).ToList());
+            var bollingerResult = await CalculateBollingerBandsAsync(dailyPrices.TakeLast(20).ToList());
             indicators.BollingerUpper = bollingerResult.upper;
             indicators.BollingerMiddle = bollingerResult.middle;
             indicators.BollingerLower = bollingerResult.lower;
 
-            indicators.VolumeSma = CalculateSMAAsync(dailyPrices.TakeLast(20).ToList(), 20);
+            indicators.VolumeSma = await CalculateSMAAsync(dailyPrices.TakeLast(20).ToList(), 20);
 
             return indicators;
         }
@@ -98,28 +99,29 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
         if (prices.Count < 26)
             return (0, 0, 0);
 
-        var ema12 = CalculateEMAAsync(prices.TakeLast(12).ToList(), 12);
-        var ema26 = CalculateEMAAsync(prices.TakeLast(26).ToList(), 26);
+        var ema12 = await CalculateEMAAsync(prices.TakeLast(12).ToList(), 12);
+        var ema26 = await CalculateEMAAsync(prices.TakeLast(26).ToList(), 26);
         var macd = ema12 - ema26;
 
-        var signalLine = CalculateEMAAsync(new List<decimal> { macd }, 9);
+        var signalLine = await CalculateEMAAsync(new List<decimal> { macd }, 9);
         var histogram = macd - signalLine;
 
         return (Math.Round(macd, 4), Math.Round(signalLine, 4), Math.Round(histogram, 4));
     }
 
-    public decimal CalculateSMAAsync(List<decimal> prices, int period)
+    public Task<decimal> CalculateSMAAsync(List<decimal> prices, int period)
     {
         if (prices.Count < period)
-            return 0;
+            return Task.FromResult(0m);
 
-        return Math.Round(prices.TakeLast(period).Average(), 2);
+        var result = Math.Round(prices.TakeLast(period).Average(), 2);
+        return Task.FromResult(result);
     }
 
-    public decimal CalculateEMAAsync(List<decimal> prices, int period)
+    public Task<decimal> CalculateEMAAsync(List<decimal> prices, int period)
     {
         if (prices.Count == 0)
-            return 0;
+            return Task.FromResult(0m);
 
         var multiplier = 2m / (period + 1);
         var ema = prices[0];
@@ -129,13 +131,13 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
             ema = (prices[i] * multiplier) + (ema * (1 - multiplier));
         }
 
-        return Math.Round(ema, 2);
+        return Task.FromResult(Math.Round(ema, 2));
     }
 
-    public (decimal upper, decimal middle, decimal lower) CalculateBollingerBandsAsync(List<decimal> prices, int period = 20, decimal stdDev = 2m)
+    public Task<(decimal upper, decimal middle, decimal lower)> CalculateBollingerBandsAsync(List<decimal> prices, int period = 20, decimal stdDev = 2m)
     {
         if (prices.Count < period)
-            return (0, 0, 0);
+            return Task.FromResult((0m, 0m, 0m));
 
         var recentPrices = prices.TakeLast(period).ToList();
         var middle = recentPrices.Average();
@@ -145,7 +147,7 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
         var upper = middle + (standardDeviation * stdDev);
         var lower = middle - (standardDeviation * stdDev);
 
-        return (Math.Round(upper, 2), Math.Round(middle, 2), Math.Round(lower, 2));
+        return Task.FromResult((Math.Round(upper, 2), Math.Round(middle, 2), Math.Round(lower, 2)));
     }
 
     private async Task<List<decimal>> FetchDailyPricesAsync(string symbol)
@@ -165,7 +167,8 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
                     prices.Add(closePrice);
                 }
 
-                return prices.Reverse().ToList();
+                prices.Reverse();
+                return prices;
             }
 
             return new List<decimal>();

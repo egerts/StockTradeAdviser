@@ -29,21 +29,32 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // For testing without authentication, use a mock object ID
-            var objectId = "mock-user-id";
-            
-            var user = await _userService.GetOrCreateUserAsync(objectId, null);
+            _logger.LogInformation("Starting GetProfile request");
+
+            var objectId = User.GetObjectId();
+            if (string.IsNullOrWhiteSpace(objectId))
+            {
+                _logger.LogWarning("User object ID missing in token");
+                return Unauthorized("User object ID not found");
+            }
+
+            _logger.LogInformation("Calling GetOrCreateUserAsync with objectId: {ObjectId}", objectId);
+            var user = await _userService.GetOrCreateUserAsync(objectId, User);
+
             if (user == null)
             {
+                _logger.LogWarning("User returned as null");
                 return NotFound("User not found");
             }
 
+            _logger.LogInformation("Successfully retrieved user with ID: {UserId}", user.Id);
             return Ok(user);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user profile");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError(ex, "Error getting user profile. Exception: {ExceptionType}, Message: {Message}", 
+                ex.GetType().Name, ex.Message);
+            return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
 
@@ -52,31 +63,20 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // For testing without authentication, use a mock object ID
-            var objectId = "mock-user-id";
-            
-            // var objectId = User.GetObjectId();
-            // if (string.IsNullOrEmpty(objectId))
-            // {
-            //     return Unauthorized("User object ID not found");
-            // }
+            var objectId = User.GetObjectId();
+            if (string.IsNullOrWhiteSpace(objectId))
+            {
+                return Unauthorized("User object ID not found");
+            }
 
-            var existingUser = await _userService.GetUserByAzureAdObjectIdAsync(objectId);
+            var existingUser = await _userService.GetUserByEntraObjectIdAsync(objectId);
             if (existingUser == null)
             {
                 return NotFound("User not found");
             }
 
-            // Allow ID mismatch for testing - update the existing user with the new data
-            // In production, you would want to validate this
-            // if (existingUser.Id != updatedUser.Id)
-            // {
-            //     return BadRequest("User ID mismatch");
-            // }
-
-            // Update the existing user with the new data, but keep the original ID
             updatedUser.Id = existingUser.Id;
-            updatedUser.AzureAdObjectId = existingUser.AzureAdObjectId;
+            updatedUser.EntraObjectId = existingUser.EntraObjectId;
 
             var updated = await _userService.UpdateUserAsync(updatedUser);
             return Ok(updated);

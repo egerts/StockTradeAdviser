@@ -99,7 +99,7 @@ public class RecommendationService : IRecommendationService
                 SentimentScore = score.SentimentScore,
                 OverallScore = score.OverallScore,
                 TargetPrice = CalculateTargetPrice(stockData.Price, score.OverallScore),
-                StopLoss = CalculateStopLoss(stockData.Price, user.TradingStrategy.StopLossPercentage),
+                StopLoss = CalculateStopLoss(stockData.Price, user.TradingStrategy.SellStrategy.StopLossPercentage),
                 Reasoning = GenerateReasoning(score, stockData),
                 KeyFactors = GenerateKeyFactors(score, stockData),
                 RiskLevel = DetermineRiskLevel(score.OverallScore, stockData.Beta),

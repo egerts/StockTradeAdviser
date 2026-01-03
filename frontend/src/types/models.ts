@@ -1,13 +1,13 @@
 export interface User {
   id: string;
+  entraObjectId: string;
   email: string;
   displayName: string;
-  azureAdObjectId: string;
   createdAt: string;
   updatedAt: string;
+  portfolios: Portfolio[];
   tradingStrategy: TradingStrategy;
   notificationPreferences: NotificationPreferences;
-  portfolios: Portfolio[];
 }
 
 export interface TradingStrategy {

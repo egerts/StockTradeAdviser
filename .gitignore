@@ -23,6 +23,8 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 **/Properties/launchSettings.json
+local.settings.json
+appsettings.Development.json
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -47,6 +49,7 @@ yarn-error.log*
 /frontend/.env.development.local
 /frontend/.env.test.local
 /frontend/.env.production.local
+/frontend/.env.production
 
 # Logs
 logs

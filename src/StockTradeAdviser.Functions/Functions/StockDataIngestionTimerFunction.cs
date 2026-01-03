@@ -1,21 +1,19 @@
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using System.Net;
 using System.Text.Json;
-using StockTradeAdviser.Core.Models;
 using StockTradeAdviser.Functions.Services;
+using Azure.Messaging.ServiceBus;
 
 namespace StockTradeAdviser.Functions.Functions;
 
-public class StockDataIngestionFunction
+public class StockDataIngestionTimerFunction
 {
-    private readonly ILogger<StockDataIngestionFunction> _logger;
+    private readonly ILogger<StockDataIngestionTimerFunction> _logger;
     private readonly IStockDataService _stockDataService;
     private readonly ServiceBusClient _serviceBusClient;
 
-    public StockDataIngestionFunction(
-        ILogger<StockDataIngestionFunction> logger,
+    public StockDataIngestionTimerFunction(
+        ILogger<StockDataIngestionTimerFunction> logger,
         IStockDataService stockDataService,
         ServiceBusClient serviceBusClient)
     {
@@ -25,7 +23,7 @@ public class StockDataIngestionFunction
     }
 
     [Function("StockDataIngestionTimer")]
-    public async Task RunTimer([TimerTrigger("0 */5 * * * *")] TimerInfo timer, FunctionContext context)
+    public async Task RunTimer([TimerTrigger("0 0 * * * *")] TimerInfo timer, FunctionContext context)
     {
         _logger.LogInformation($"Stock data ingestion timer trigger function executed at: {DateTime.UtcNow}");
 
@@ -43,43 +41,11 @@ public class StockDataIngestionFunction
         }
     }
 
-    [Function("ProcessStockDataQueue")]
-    public async Task ProcessQueueMessage(
-        [ServiceBusTrigger("stock-data-queue", Connection = "ServiceBus:ConnectionString")] string message,
-        FunctionContext context)
-    {
-        _logger.LogInformation($"Processing stock data queue message: {message}");
-
-        try
-        {
-            var stockData = JsonSerializer.Deserialize<StockData>(message, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            if (stockData != null)
-            {
-                await _stockDataService.ProcessStockDataAsync(stockData);
-                _logger.LogInformation($"Successfully processed stock data for {stockData.Symbol}");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing queue message: {Message}", message);
-            throw;
-        }
-    }
-
     private async Task<List<string>> GetWatchlistSymbols()
     {
         var symbols = new List<string>
         {
-            "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", 
-            "JNJ", "V", "PG", "UNH", "HD", "MA", "BAC", "XOM", "PFE", "CSCO",
-            "ADBE", "CRM", "NFLX", "ACN", "NKE", "KO", "PEP", "T", "CVX",
-            "ABT", "MRK", "DHR", "WMT", "MDT", "COST", "LIN", "TXN", "NEE",
-            "AVGO", "LOW", "NOW", "QCOM", "UNP", "HON", "SBUX", "SCHW", "AMD",
-            "INTC", "RTX", "AMGN", "BA", "CAT", "GE", "DIS", "VZ", "IBM", "GS"
+            "AAPL", "MSFT"
         };
 
         return symbols;

@@ -86,7 +86,7 @@ public class MockPortfolioService : IPortfolioService
         return new User
         {
             Id = "mock-user-id",
-            AzureAdObjectId = azureAdObjectId,
+            EntraObjectId = azureAdObjectId,
             Email = "test@example.com",
             DisplayName = "Test User",
             CreatedAt = DateTime.UtcNow,

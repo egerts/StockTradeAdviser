@@ -3,6 +3,7 @@ using StockTradeAdviser.Core.Models;
 using StockTradeAdviser.Data.Services;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
 
 namespace StockTradeAdviser.Functions.Services;
 

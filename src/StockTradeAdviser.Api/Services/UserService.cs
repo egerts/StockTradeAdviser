@@ -29,43 +29,54 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId)
+    public async Task<User?> GetUserByEntraObjectIdAsync(string entraObjectId)
     {
         try
         {
-            return await _cosmosDbService.GetUserByAzureAdObjectIdAsync(azureAdObjectId);
+            return await _cosmosDbService.GetUserByEntraObjectIdAsync(entraObjectId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user by Azure AD object ID: {AzureAdObjectId}", azureAdObjectId);
+            _logger.LogError(ex, "Error getting user by Entra object ID: {EntraObjectId}", entraObjectId);
             throw;
         }
     }
 
-    public async Task<User> GetOrCreateUserAsync(string azureAdObjectId, ClaimsPrincipal claimsPrincipal)
+    public async Task<User> GetOrCreateUserAsync(string entraObjectId, ClaimsPrincipal claimsPrincipal)
     {
         try
         {
-            var existingUser = await _cosmosDbService.GetUserByAzureAdObjectIdAsync(azureAdObjectId);
+            _logger.LogInformation("GetOrCreateUserAsync called with EntraObjectId: {EntraObjectId}", entraObjectId);
+            
+            _logger.LogInformation("Checking for existing user");
+            var existingUser = await _cosmosDbService.GetUserByEntraObjectIdAsync(entraObjectId);
+            
             if (existingUser != null)
             {
+                _logger.LogInformation("Found existing user with ID: {UserId}", existingUser.Id);
                 return existingUser;
             }
 
+            _logger.LogInformation("Creating new user");
             var newUser = new User
             {
-                AzureAdObjectId = azureAdObjectId,
-                Email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ?? claimsPrincipal.FindFirst("preferred_username")?.Value ?? string.Empty,
-                DisplayName = claimsPrincipal.FindFirst("name")?.Value ?? string.Empty,
+                EntraObjectId = entraObjectId,
+                Email = claimsPrincipal?.FindFirst(ClaimTypes.Email)?.Value ?? claimsPrincipal?.FindFirst("preferred_username")?.Value ?? "test@example.com",
+                DisplayName = claimsPrincipal?.FindFirst("name")?.Value ?? "Test User",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            return await _cosmosDbService.CreateUserAsync(newUser);
+            _logger.LogInformation("Calling CreateUserAsync for new user");
+            var createdUser = await _cosmosDbService.CreateUserAsync(newUser);
+            _logger.LogInformation("Successfully created user with ID: {UserId}", createdUser.Id);
+            
+            return createdUser;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating or getting user: {AzureAdObjectId}", azureAdObjectId);
+            _logger.LogError(ex, "Error creating or getting user: {EntraObjectId}. Exception: {ExceptionType}, Message: {Message}", 
+                entraObjectId, ex.GetType().Name, ex.Message);
             throw;
         }
     }

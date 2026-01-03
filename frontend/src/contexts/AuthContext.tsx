@@ -43,7 +43,7 @@ interface AuthProviderProps {
           }
 
           // Call backend API to get user profile
-          const userProfile = await fetch('http://localhost:53133/api/auth/profile');
+          const userProfile = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/profile`);
 
           if (userProfile.ok) {
             const userData = await userProfile.json();
@@ -53,7 +53,7 @@ interface AuthProviderProps {
             // Fallback to MSAL account data if API fails
             const userData: User = {
               id: account.homeAccountId || account.localAccountId,
-              azureAdObjectId: account.localAccountId,
+              entraObjectId: account.localAccountId,
               email: account.username || '',
               displayName: account.name || account.username || 'User',
               createdAt: new Date().toISOString(),

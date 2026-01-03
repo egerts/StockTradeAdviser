@@ -4,7 +4,6 @@ namespace StockTradeAdviser.Api.Services;
 
 public interface IPortfolioService
 {
-    Task<User?> GetUserByAzureAdObjectIdAsync(string azureAdObjectId);
     Task<Portfolio?> GetPortfolioAsync(string portfolioId, string userId);
     Task<List<Portfolio>> GetUserPortfoliosAsync(string userId);
     Task<Portfolio> CreatePortfolioAsync(Portfolio portfolio);

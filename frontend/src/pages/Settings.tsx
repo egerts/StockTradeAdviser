@@ -63,7 +63,7 @@ export const Settings: React.FC = () => {
         ...profileData,
       };
 
-      const response = await fetch('http://localhost:53133/api/auth/profile', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const Settings: React.FC = () => {
         tradingStrategy: strategyData,
       };
 
-      const response = await fetch('http://localhost:53133/api/auth/profile', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ export const Settings: React.FC = () => {
         notificationPreferences: notificationData,
       };
 
-      const response = await fetch('http://localhost:53133/api/auth/profile', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
